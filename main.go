@@ -40,13 +40,13 @@ func main() {
 	lerDados, _ := ioutil.ReadAll(resp.Body)
 
 	//criando o arquivo answer.json
-	arquivo, err := os.OpenFile("answer.json", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	arquivo, err := os.OpenFile("answer", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
 	//abrindo arquivo
-	jsonFile, err := os.Open("answer.json")
+	jsonFile, err := os.Open("answer")
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -83,7 +83,7 @@ func main() {
 	}
 
 	//Por fim vamos salvar em um arquivo JSON alterado.
-	err = ioutil.WriteFile("answer.json", byteValueJSON, 0600)
+	err = ioutil.WriteFile("answer", byteValueJSON, 0600)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -91,12 +91,14 @@ func main() {
 	//definindo o valor da url de submit
 	urlSubmit := "https://api.codenation.dev/v1/challenge/dev-ps/submit-solution?token=92693f8e09cf0f268c1334ca86e0e4e3af8b155c"
 
+	//transformando a file em multipart
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	part, _ := writer.CreateFormFile("file", filepath.Base(jsonFile.Name()))
 	io.Copy(part, jsonFile)
 	writer.Close()
 
+	//fazendo requisição post
 	r, _ := http.NewRequest("POST", urlSubmit, body)
 	r.Header.Add("Content-Type", writer.FormDataContentType())
 	client := &http.Client{}
