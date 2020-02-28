@@ -1,13 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 type Answer struct {
@@ -23,7 +27,7 @@ func main() {
 	//declarando valor da url
 	url := "https://api.codenation.dev/v1/challenge/dev-ps/generate-data?token=92693f8e09cf0f268c1334ca86e0e4e3af8b155c"
 
-	//fazendo a requisição http
+	//fazendo a requisição http get
 	resp, err := http.Get(url)
 
 	if err != nil {
@@ -84,11 +88,18 @@ func main() {
 		fmt.Println(err)
 	}
 
+	//definindo o valor da url de submit
 	urlSubmit := "https://api.codenation.dev/v1/challenge/dev-ps/submit-solution?token=92693f8e09cf0f268c1334ca86e0e4e3af8b155c"
 
-	submit, err := http.Post(urlSubmit, "answer.json", resp.Body)
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, _ := writer.CreateFormFile("file", filepath.Base(jsonFile.Name()))
+	io.Copy(part, jsonFile)
+	writer.Close()
 
-	if submit.StatusCode == 200 {
-		os.Open(urlSubmit)
-	}
+	r, _ := http.NewRequest("POST", urlSubmit, body)
+	r.Header.Add("Content-Type", writer.FormDataContentType())
+	client := &http.Client{}
+	client.Do(r)
+
 }
